@@ -1,4 +1,6 @@
 <?php
+header('Access-Control-Allow-Headers: Content-Type'); // Allow Content-Type header
+
 require_once('../config/config.php');
 require_once('../config/database.php');
 
@@ -7,6 +9,13 @@ $request_body = file_get_contents('php://input');
 
 // Decode the JSON data into a PHP array
 $data = json_decode($request_body, true);
+
+// Validate input fields with basic validation
+if (empty($data['title']) || empty($data['content']) || empty($data['author'])) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Error: Missing or empty required parameter']);
+    exit();
+}
 
 // Validate input fields
 if (!isset($data['title']) || !isset($data['content']) || !isset($data['author'])) {
@@ -21,27 +30,22 @@ $content = filter_var($data['content'], FILTER_SANITIZE_STRING);
 
 // Prepare statement
 $stmt = $conn->prepare('INSERT INTO blog_posts (title, content, author) VALUES (?, ?, ?)');
-$stmt->bind_param('sss', $data['title'], $data['content'], $data['author']);
+$stmt->bind_param('sss', $title, $content, $author);
 
 // Execute statement
 if ($stmt->execute()) {
     // Get the ID of the newly created post
     $id = $stmt->insert_id;
 
-    // Close statement and connection
-    $stmt->close();
-    $conn->close();
-
     // Return success response
     http_response_code(201);
-    echo json_encode(['message' => 'Post created', 'id' => $id]);
+    echo json_encode(['message' => 'Post created successfully', 'id' => $id]);
 } else {
-    // Close statement and connection
-    $stmt->close();
-    $conn->close();
-
-    // Return error response
+    // Return error response with more detail if possible
     http_response_code(500);
-    die(json_encode(['message' => 'Error creating post']));
+    echo json_encode(['message' => 'Error creating post: ' . $stmt->error]);
 }
 
+// Close statement and connection
+$stmt->close();
+$conn->close();

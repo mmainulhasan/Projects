@@ -3,6 +3,7 @@
 $dbHost     = "localhost";
 $dbUsername = "root";
 $dbPassword = "root";
+//$dbName     = "blogging_site";
 $dbName     = "simple_web_app";
 
 // Create database connection
